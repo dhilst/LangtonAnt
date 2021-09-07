@@ -32,6 +32,13 @@ packages:
       sha256: 4098c4b8bb503fcf0730aedc8247a479d3e22fd1fe4c6b4b2b2b5da30bdfb713
   original:
     hackage: ansi-terminal-0.11
+- completed:
+    hackage: optparse-applicative-0.16.1.0@sha256:16ebd7054b2265c1aad16c1d19dc503695fbfc67b35203d9952fd577d08c0110,4982
+    pantry-tree:
+      size: 2979
+      sha256: 0d4a0d442f7f25d35e88f5f30099763c512e3c8fefe2ebccebd82cead4000021
+  original:
+    hackage: optparse-applicative-0.16.1.0
 snapshots:
 - completed:
     size: 587113

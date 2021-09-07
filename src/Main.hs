@@ -1,15 +1,26 @@
 module Main where
 
-import System.IO
 import Control.Concurrent
 import Control.Monad
 import Data.Array
 import Data.Char
 import Data.Function
+import Data.Maybe
+import Data.Semigroup ((<>))
 import Debug.Trace
-import System.Console.ANSI (clearScreen)
-import qualified System.Process as SP
 import Graphics.Vty
+import Options.Applicative
+import System.Console.ANSI (clearScreen)
+import System.Exit (exitSuccess)
+import System.IO
+import qualified System.Process as SP
+
+data Options =
+  Options
+    { width :: Int
+    , height :: Int
+    }
+  deriving (Show)
 
 data Direction
   = DUp
@@ -34,11 +45,21 @@ data Ant =
     }
   deriving (Show)
 
-h = 100
+h = 25
 
-w = 200
+w = 50
 
 start = (h `div` 2, w `div` 2)
+
+options :: Parser Options
+options =
+  Options <$>
+  option
+    auto
+    (long "width" <> help "width of the terminal" <> value 100 <> metavar "INT") <*>
+  option
+    auto
+    (long "height" <> help "width of the terminal" <> value 100 <> metavar "INT")
 
 mkArray :: (Int, Int) -> Array (Int, Int) SquareColor
 mkArray (maxx, maxy) =
@@ -78,8 +99,9 @@ printUniverse m = do
 
 part :: Int -> [a] -> [[a]]
 part _ [] = []
-part w xs = let (y, ys) = splitAt w xs
-    in y : part w ys
+part w xs =
+  let (y, ys) = splitAt w xs
+   in y : part w ys
 
 renderUniverse :: Universe -> Image
 renderUniverse universe =
@@ -147,9 +169,21 @@ asciiInit :: IO ()
 asciiInit = do
   hSetBuffering stdout $ BlockBuffering (Just (w * h))
 
-vtyRender :: Vty -> Universe -> IO ()
-vtyRender vty universe = do
-  update vty (picForImage (renderUniverse universe))
+vtyRender :: Vty -> Int -> Universe -> IO ()
+vtyRender vty step universe = do
+  input <- nextEventNonblocking vty
+  quit vty & when (input & isExit)
+  let universeImage = renderUniverse universe
+      output =
+        universeImage <->
+        string defAttr ("Pres ESC to exit - Steps: " ++ show step)
+   in update vty (picForImage output)
+  where
+    isExit (Just (EvKey KEsc _)) = True
+    isExit _ = False
+    quit vty = do
+      shutdown vty
+      exitSuccess
 
 runSystem :: (Universe -> IO ()) -> (Ant, Universe) -> Int -> IO ()
 runSystem render system@(ant, universe) step = do
@@ -158,6 +192,14 @@ runSystem render system@(ant, universe) step = do
 
 main :: IO ()
 main = do
+  opts <- execParser opts
+  print opts
   cfg <- standardIOConfig
   vty <- mkVty cfg
-  runSystem (vtyRender vty) (mkAnt, mkUniverse) 0
+  runSystem (vtyRender vty 0) (mkAnt, mkUniverse) 0
+  where
+    opts =
+      info
+        (options <**> helper)
+        (fullDesc <>
+         progDesc "Langton Ant" <> header "A langton ant implementation")
