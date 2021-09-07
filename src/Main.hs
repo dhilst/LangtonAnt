@@ -37,9 +37,15 @@ data SquareColor
   | White
   deriving (Show)
 
-type Pos = (Int, Int)
-
 type Universe = Array Pos SquareColor
+
+type Height = Int
+
+type Width = Int
+
+type Pos = (Height, Width)
+
+type UniSiz = (Height, Width)
 
 data Ant =
   Ant
@@ -48,7 +54,7 @@ data Ant =
     }
   deriving (Show)
 
-start Options {width, height} = (height `div` 2, width `div` 2)
+middle (height, width) = (height `div` 2, width `div` 2)
 
 options :: Parser Options
 options =
@@ -61,18 +67,19 @@ options =
     (long "height" <> help "width of the terminal" <> value 50 <> metavar "INT")
 
 mkArray :: (Int, Int) -> Array (Int, Int) SquareColor
-mkArray (maxx, maxy) =
+mkArray (maxy, maxx) =
   array
     ((0, 0), (maxy - 1, maxx - 1))
     [((y, x), Black) | y <- [0 .. maxy - 1], x <- [0 .. maxx - 1]]
 
-mkUniverse :: Options -> Universe
-mkUniverse Options {width = w, height = h} = mkArray (w, h)
+mkUniverse :: (Int, Int) -> Universe
+mkUniverse (h, w) = mkArray (h, w)
 
-mkAnt :: Options -> Ant
-mkAnt opts =
-  let (y, x) = start opts
-   in Ant {pos = (y, x), dir = DUp}
+universeSize :: Universe -> (Int, Int)
+universeSize = snd . bounds
+
+mkAnt :: UniSiz -> Ant
+mkAnt siz = Ant {pos = middle siz, dir = DUp}
 
 -- sleep seconds
 delay :: IO ()
@@ -129,25 +136,25 @@ flipCell (y, x) universe =
   let c = universe ! (y, x)
    in updateCell (y, x) (flipSquareColor c) universe
 
-moveForward :: Options -> Direction -> (Int, Int) -> (Int, Int)
-moveForward Options {width = w, height = h} DLeft (y, x) = (y, (x - 1) `mod` w)
-moveForward Options {width = w, height = h} DRight (y, x) = (y, (x + 1) `mod` w)
-moveForward Options {width = w, height = h} DUp (y, x) = ((y - 1) `mod` h, x)
-moveForward Options {width = w, height = h} DDown (y, x) = ((y + 1) `mod` h, x)
+moveForward :: UniSiz -> Direction -> (Int, Int) -> (Int, Int)
+moveForward (h, w) DLeft (y, x) = (y, (x - 1) `mod` w)
+moveForward (h, w) DRight (y, x) = (y, (x + 1) `mod` w)
+moveForward (h, w) DUp (y, x) = ((y - 1) `mod` h, x)
+moveForward (h, w) DDown (y, x) = ((y + 1) `mod` h, x)
 
-moveAnt :: Options -> SquareColor -> Ant -> Ant
-moveAnt opts currentColor Ant {pos = (y, x), dir = dir} =
+moveAnt :: UniSiz -> SquareColor -> Ant -> Ant
+moveAnt siz currentColor Ant {pos = (y, x), dir = dir} =
   let newDir = turnAnt currentColor dir
-      (x', y') = moveForward opts newDir (y, x)
+      (x', y') = moveForward siz newDir (y, x)
    in Ant {pos = (x', y'), dir = newDir}
 
 getCurrentCellColor :: Ant -> Universe -> SquareColor
 getCurrentCellColor Ant {pos = (y, x)} universe = universe ! (y, x)
 
-stepSystem :: Options -> (Ant, Universe) -> (Ant, Universe)
-stepSystem opts (ant@Ant {pos = pos}, universe) =
+stepSystem :: (Ant, Universe) -> (Ant, Universe)
+stepSystem (ant@Ant {pos = pos}, universe) =
   let currentCellColor = getCurrentCellColor ant universe
-      newAnt = moveAnt opts currentCellColor ant
+      newAnt = moveAnt (universeSize universe) currentCellColor ant
    in (newAnt, flipCell pos universe)
 
 vtyRender :: Vty -> Int -> Universe -> ReaderT Options IO ()
@@ -175,16 +182,17 @@ runSystem ::
 runSystem render system@(ant, universe) step = do
   opts <- ask
   render step universe
-  runSystem render (stepSystem opts system) (step + 1)
+  runSystem render (stepSystem system) (step + 1)
 
 main :: IO ()
 main = do
   opts' <- execParser opts
   cfg <- standardIOConfig
   vty <- mkVty cfg
-  runReaderT
-    (runSystem (vtyRender vty) (mkAnt opts', mkUniverse opts') 0)
-    opts'
+  let Options {height, width} = opts'
+      universe = mkUniverse (height, width)
+      siz = universeSize universe
+   in runReaderT (runSystem (vtyRender vty) (mkAnt siz, universe) 0) opts'
   where
     opts =
       info
