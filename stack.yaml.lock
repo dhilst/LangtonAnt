@@ -39,6 +39,13 @@ packages:
       sha256: 0d4a0d442f7f25d35e88f5f30099763c512e3c8fefe2ebccebd82cead4000021
   original:
     hackage: optparse-applicative-0.16.1.0
+- completed:
+    hackage: mtl-2.2.2@sha256:1050fb71acd9f5d67da7d992583f5bd0eb14407b9dc7acc122af1b738b706ca3,2261
+    pantry-tree:
+      size: 1713
+      sha256: b8bdc2259e2f943a7252fb164805666fe108ac959d398e0af27b43ba2ebc241c
+  original:
+    hackage: mtl-2.2.2
 snapshots:
 - completed:
     size: 587113
