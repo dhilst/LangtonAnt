@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 extra-source-files:  README.md
 
 executable langtonant
-  ghc-options: -threaded
+  ghc-options: -threaded -Wall
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
@@ -25,3 +25,4 @@ executable langtonant
                      , ansi-terminal
                      , optparse-applicative
                      , mtl
+  other-modules: LangtonAnt, Common, GameOfLife
