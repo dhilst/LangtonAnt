@@ -5,10 +5,8 @@ module Main where
 import Options.Applicative
 
 import Common
+import GameOfLife
 import LangtonAnt
-
-gameOfLife :: Options -> IO ()
-gameOfLife _ = error "not implemented"
 
 main :: IO ()
 main = do

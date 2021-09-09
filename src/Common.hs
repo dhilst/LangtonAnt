@@ -10,6 +10,7 @@ module Common
   , mkUniverse
   , universeSize
   , flipCell
+  , flipSquareColor
   , vtyRender
   , middle
   ) where

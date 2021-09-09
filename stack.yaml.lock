@@ -46,6 +46,13 @@ packages:
       sha256: b8bdc2259e2f943a7252fb164805666fe108ac959d398e0af27b43ba2ebc241c
   original:
     hackage: mtl-2.2.2
+- completed:
+    hackage: random-1.2.0@sha256:195506fedaa7c31c1fa2a747e9b49b4a5d1f0b09dd8f1291f23a771656faeec3,6097
+    pantry-tree:
+      size: 1259
+      sha256: 77505a2919b4d1d84abc36c995046f661741251e58a592ed826b7c1aee1c044c
+  original:
+    hackage: random-1.2.0
 snapshots:
 - completed:
     size: 587113

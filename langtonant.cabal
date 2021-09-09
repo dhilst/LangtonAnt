@@ -25,4 +25,5 @@ executable langtonant
                      , ansi-terminal
                      , optparse-applicative
                      , mtl
+                     , random
   other-modules: LangtonAnt, Common, GameOfLife

@@ -1,6 +1,11 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module GameOfLife where
 
-import Data.Array (array, assocs, bounds)
+import Control.Concurrent (threadDelay)
+import Data.Array ((!), array, assocs, bounds)
+import Graphics.Vty
+import System.Random (randomRIO)
 
 import Common
 
@@ -33,13 +38,25 @@ cellState Live n
 cellState Dead 3 = Live
 cellState _ _ = Dead
 
-type Bounds = (Int, Int)
-
 getNeighbour :: Pos -> Universe -> CState
-getNeighbour = undefined
+getNeighbour pos@(y, x) universe =
+  let (h, w) = universeSize universe
+   in if 0 <= y && y < h && 0 <= x && x < w
+        then colorToState (universe ! pos)
+        else Dead
 
+-- What about dependent list here, with 8 spaces?
 getNeighbours :: Pos -> Universe -> [CState]
-getNeighbours = undefined
+getNeighbours (y, x) universe =
+  [ getNeighbour (y - 1, x - 1) universe
+  , getNeighbour (y - 1, x) universe
+  , getNeighbour (y - 1, x + 1) universe
+  , getNeighbour (y, x - 1) universe
+  , getNeighbour (y, x + 1) universe
+  , getNeighbour (y + 1, x - 1) universe
+  , getNeighbour (y + 1, x) universe
+  , getNeighbour (y + 1, x + 1) universe
+  ]
 
 getNewCellState :: Universe -> (Pos, SquareColor) -> (Pos, SquareColor)
 getNewCellState universe (pos, curState) =
@@ -59,3 +76,30 @@ stepSystem universe =
       newUniverse = fmap (getNewCellState universe) assoc'
       bounds' = bounds universe
    in array bounds' newUniverse
+
+randomizeSystem :: Int -> Universe -> IO Universe
+randomizeSystem num universe = do
+  mapM randomizeCell universe
+  where
+    randomizeCell :: SquareColor -> IO SquareColor
+    randomizeCell color = do
+      r <- randomRIO (1, 100)
+      return $
+        if r < num
+          then flipSquareColor color
+          else color
+
+runGameOfLife :: (Int -> Universe -> IO ()) -> Int -> Universe -> IO ()
+runGameOfLife render step universe = do
+  let newUniverse = stepSystem universe
+  render step newUniverse
+  threadDelay 100000
+  runGameOfLife render (step + 1) newUniverse
+
+gameOfLife :: Options -> IO ()
+gameOfLife opts = do
+  vty <- standardIOConfig >>= mkVty
+  let Options {height, width} = opts
+  let universe = mkUniverse (height, width)
+  randomUniverse <- randomizeSystem 25 universe
+  runGameOfLife (vtyRender vty) 0 randomUniverse
