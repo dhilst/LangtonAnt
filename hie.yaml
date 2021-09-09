@@ -2,3 +2,12 @@ cradle:
   stack:
     - path: "./src/Main.hs"
       component: "langtonant:exe:langtonant"
+
+    - path: "./src/LangtonAnt.hs"
+      component: "langtonant:exe:langtonant"
+
+    - path: "./src/Common.hs"
+      component: "langtonant:exe:langtonant"
+
+    - path: "./src/GameOfLife.hs"
+      component: "langtonant:exe:langtonant"
